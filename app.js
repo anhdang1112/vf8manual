@@ -95,12 +95,30 @@ const crumb = c => esc([c.section, ...c.path.slice(0, 2)].filter((x, i, a) => a.
 const thumb = f => f.replace("img/", "img/t/");
 
 // Tóm tắt (text thuần) -> HTML: câu mở đầu, danh sách, ô cảnh báo
+// Tách "Nhãn: nội dung" (nhãn ngắn) để nhãn thành tiêu đề riêng một dòng
+const cap = x => x.charAt(0).toUpperCase() + x.slice(1);
+const splitLabel = t => { const m = t.match(/^([^:.;()]{1,48}):\s+([\s\S]*)$/); return m ? [m[1], m[2]] : [null, t]; };
+
+function fmtBullet(t) {
+  const [lab, rest] = splitLabel(t);
+  const head = lab ? `<b class="lb">${esc(lab)}</b>` : "";
+  const steps = rest.split(/\s*(?=\b\d{1,2}\)\s)/).filter(Boolean);
+  if (steps.length >= 2 && /^1\)/.test(steps[0])) { // các bước 1) 2) 3) -> danh sách đánh số
+    return `<li${lab ? "" : ' class="so"'}>${head}<ol class="steps">${steps.map(s => `<li>${esc(cap(s.replace(/^\d{1,2}\)\s*/, "").replace(/[;,]\s*$/, "")))}</li>`).join("")}</ol></li>`;
+  }
+  const segs = rest.split(/;\s+/).filter(Boolean);
+  if (segs.length >= 2 && rest.length > 80) { // nhiều ý ngăn bằng ";" -> mỗi ý một dòng
+    return `<li${lab ? "" : ' class="so"'}>${head}<ul class="sub">${segs.map(s => { const [l2, r2] = splitLabel(s); return `<li>${l2 ? `<b>${esc(l2)}:</b> ` : ""}${esc(cap(r2.replace(/[.;]\s*$/, "")))}</li>`; }).join("")}</ul></li>`;
+  }
+  return `<li>${head}<span class="tx">${esc(rest)}</span></li>`;
+}
+
 function fmtSum(t) {
   const lines = t.split("\n").map(x => x.trim()).filter(Boolean);
   let out = "", ul = [];
-  const flush = () => { if (ul.length) { out += `<ul>${ul.join("")}</ul>`; ul = []; } };
+  const flush = () => { if (ul.length) { out += `<ul class="bl">${ul.join("")}</ul>`; ul = []; } };
   lines.forEach(l => {
-    if (l.startsWith("•")) ul.push(`<li>${esc(l.replace(/^•\s*/, ""))}</li>`);
+    if (l.startsWith("•")) ul.push(fmtBullet(l.replace(/^•\s*/, "")));
     else if (l.startsWith("⚠️")) { flush(); out += `<div class="warnbox"><span>⚠️</span><p>${esc(l.replace(/^⚠️\s*/, ""))}</p></div>`; }
     else { flush(); out += `<p>${esc(l)}</p>`; }
   });
@@ -285,4 +303,10 @@ async function init() {
   route();
 }
 init();
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+const APP_VERSION = "v4 · 21/10/2026";
+$(".foot").insertAdjacentHTML("beforeend", `<span class="ver">Phiên bản app: ${APP_VERSION}</span>`);
+if ("serviceWorker" in navigator) {
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (had) location.reload(); }); // có bản mới -> tự tải lại
+  navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
+}

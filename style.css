@@ -82,9 +82,19 @@ details.grp.hit{border-color:var(--brand)}
 /* tóm tắt */
 .sumtxt p{margin:.35em 0}
 .sumtxt p:first-child{font-weight:600}
-.sumtxt ul{margin:.3em 0;padding:0;list-style:none}
-.sumtxt li{position:relative;padding:5px 0 5px 22px}
-.sumtxt li::before{content:"";position:absolute;left:4px;top:.85em;width:8px;height:8px;border-radius:50%;background:var(--brand)}
+.sumtxt ul.bl{margin:.5em 0;padding:0;list-style:none}
+.sumtxt ul.bl>li{position:relative;padding:8px 0 8px 22px;border-top:1px solid var(--line)}
+.sumtxt ul.bl>li:first-child{border-top:0}
+.sumtxt ul.bl>li::before{content:"";position:absolute;left:3px;top:1.05em;width:8px;height:8px;border-radius:50%;background:var(--brand)}
+.sumtxt .lb{display:block;font-weight:700;color:var(--ink);margin-bottom:3px}
+.sumtxt .tx{display:block;color:var(--ink)}
+.sumtxt ol.steps{list-style:none;counter-reset:st;margin:6px 0 0;padding:0}
+.sumtxt ol.steps>li{counter-increment:st;position:relative;padding:5px 0 5px 34px;min-height:30px}
+.sumtxt ol.steps>li::before{content:counter(st);position:absolute;left:0;top:4px;width:24px;height:24px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.sumtxt ul.sub{list-style:none;margin:4px 0 0;padding:0 0 0 2px}
+.sumtxt ul.sub>li{padding:4px 0 4px 12px;border-left:3px solid var(--chip)}
+.sumtxt ul.sub>li b{color:var(--brand)}
+.ver{display:block;margin-top:6px;opacity:.8}
 .warnbox{display:flex;gap:10px;align-items:flex-start;background:var(--warn-bg);border-radius:12px;padding:10px 12px;margin:8px 0;color:var(--warn)}
 .warnbox p{margin:0!important;font-weight:600;font-size:14.5px}
 /* thẻ trả lời */
@@ -119,3 +129,5 @@ details.orig>summary{cursor:pointer;color:var(--brand);font-size:13.5px;font-wei
 .lightbox{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;cursor:zoom-out}
 .lightbox img{max-width:100%;max-height:86vh;border-radius:10px;background:#fff}
 .lightbox span{color:#cbd5e1;font-size:13px;margin-top:10px}
+.sumtxt ul.bl>li.so{padding-left:0}
+.sumtxt ul.bl>li.so::before{display:none}
