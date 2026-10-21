@@ -235,10 +235,7 @@ function homeView() {
     </section>
     <section class="urgent"><h2>Cần gấp</h2><div class="urow">${urgent.map(([id, ic, t]) => `<a href="#/topic/${id}"><span>${ic}</span>${t}</a>`).join("")}</div></section>
     ${errorsBanner()}
-    ${TOPIC_GROUPS.map((g, gi) => `<section class="tg g${gi}"><h2><i></i>${esc(g.name)}</h2><div class="grid">${g.topics.map(t => {
-      const f = topicFig(t);
-      return `<a class="tile" href="#/topic/${t.id}"><div class="timg">${f ? `<img src="${thumb(f)}" alt="" loading="lazy">` : `<span class="big">${t.ic}</span>`}<span class="ic">${t.ic}</span></div><span class="tt">${esc(t.t)}</span></a>`;
-    }).join("")}</div></section>`).join("")}
+    ${groupCards()}
     <p class="note">Tóm tắt do Claude soạn sẵn từ Hướng dẫn sử dụng chính hãng; luôn có nút xem nguyên văn để đối chiếu.</p>`;
   bindAsk();
   app.querySelectorAll(".chip").forEach(b => b.onclick = () => { location.hash = "#/ask/" + encodeURIComponent(b.dataset.q); });
@@ -297,6 +294,7 @@ function route() {
   const [, kind, a, b] = location.hash.split("/");
   if (kind === "topic") topicView(a);
   else if (kind === "errors") errorsView();
+  else if (kind === "group") groupView(+a);
   else if (kind === "ask") askView(decodeURIComponent(a || ""));
   else if (kind === "section") sectionView(a, b != null ? +b : null);
   else homeView();
@@ -334,7 +332,7 @@ async function init() {
   route();
 }
 init();
-const APP_VERSION = "v7 · 21/10/2026";
+const APP_VERSION = "v8 · 21/10/2026";
 $(".foot").insertAdjacentHTML("beforeend", `<span class="ver">Phiên bản app: ${APP_VERSION}</span>`);
 if ("serviceWorker" in navigator) {
   const had = !!navigator.serviceWorker.controller;
