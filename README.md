@@ -9,3 +9,8 @@ Dữ liệu lấy từ HDSD chính hãng (API công khai `omapi.vinfastauto.com`
 - Sửa danh mục chức năng: `topics.js` (chỉ trỏ tới mục có sẵn trong HDSD).
 - Ảnh trong HDSD tải trực tiếp từ server VinFast (cần mạng lần đầu, sau đó được cache).
 - Lưu ý bản quyền: nội dung HDSD thuộc VinFast, chỉ nên dùng cá nhân/nội bộ, cân nhắc trước khi public.
+
+## Lỗi thường gặp (dữ liệu cộng đồng)
+- Nguồn: Google Sheet tab 'Danh sách lỗi' (chia sẻ bằng link). Cập nhật: `python tools/build_errors.py` -> `data/errors.json`.
+- Bỏ cột 'Người báo' và 'Ghi chú', thay tên người trong các cột còn lại bằng 'một chủ xe' (xem `clean()` trong script). Trước khi publish, kiểm tra lại `data/errors.json` không còn tên/thông tin cá nhân.
+- Trong app luôn gắn nhãn 'thông tin cộng đồng, không phải chính hãng VinFast'.

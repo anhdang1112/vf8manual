@@ -234,6 +234,7 @@ function homeView() {
       <div class="chips">${chips.map(c => `<button class="chip" data-q="${esc(c)}">${esc(c)}</button>`).join("")}</div>
     </section>
     <section class="urgent"><h2>Cần gấp</h2><div class="urow">${urgent.map(([id, ic, t]) => `<a href="#/topic/${id}"><span>${ic}</span>${t}</a>`).join("")}</div></section>
+    ${errorsBanner()}
     ${TOPIC_GROUPS.map((g, gi) => `<section class="tg g${gi}"><h2><i></i>${esc(g.name)}</h2><div class="grid">${g.topics.map(t => {
       const f = topicFig(t);
       return `<a class="tile" href="#/topic/${t.id}"><div class="timg">${f ? `<img src="${thumb(f)}" alt="" loading="lazy">` : `<span class="big">${t.ic}</span>`}<span class="ic">${t.ic}</span></div><span class="tt">${esc(t.t)}</span></a>`;
@@ -286,6 +287,7 @@ function askView(q) {
       </div></article>`).join("")}
     <p class="note">Tóm tắt do Claude soạn sẵn từ HDSD; luôn có nút xem nguyên văn để đối chiếu.</p>`}`;
   bindAsk();
+  app.insertAdjacentHTML("beforeend", errorHits(q));
   app.querySelectorAll("[data-open]").forEach(b => b.onclick = () => { const c = CHUNKS[+b.dataset.open]; location.hash = `#/section/${c.lv2}/${c.id}`; });
   window.scrollTo(0, 0);
 }
@@ -294,6 +296,7 @@ function route() {
   if (!CHUNKS.length) return;
   const [, kind, a, b] = location.hash.split("/");
   if (kind === "topic") topicView(a);
+  else if (kind === "errors") errorsView();
   else if (kind === "ask") askView(decodeURIComponent(a || ""));
   else if (kind === "section") sectionView(a, b != null ? +b : null);
   else homeView();
@@ -318,6 +321,7 @@ async function init() {
     CHUNKS = await (await fetch("data/manual.json")).json();
     SUMS = await (await fetch("data/summaries.json")).json().catch(() => ({}));
     FIGS = await (await fetch("data/figs.json")).json().catch(() => ({}));
+    ERRS = await (await fetch("data/errors.json")).json().catch(() => []);
   } catch (e) {
     app.innerHTML = `<p class="empty">Không tải được dữ liệu hướng dẫn. Kiểm tra kết nối rồi tải lại trang.</p>`;
     return;
@@ -330,7 +334,7 @@ async function init() {
   route();
 }
 init();
-const APP_VERSION = "v5 · 21/10/2026";
+const APP_VERSION = "v6 · 21/10/2026";
 $(".foot").insertAdjacentHTML("beforeend", `<span class="ver">Phiên bản app: ${APP_VERSION}</span>`);
 if ("serviceWorker" in navigator) {
   const had = !!navigator.serviceWorker.controller;
