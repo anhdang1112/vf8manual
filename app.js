@@ -2,7 +2,7 @@
 const $ = (s, r = document) => r.querySelector(s);
 const app = $("#app"), statusEl = $("#status");
 const OFFICIAL = "https://om.vinfastauto.com/vi_vn/detail?car=VF8NP&year=2026";
-let CHUNKS = [], SUMS = {}, BY_SECTION = new Map(), INDEX = null;
+let CHUNKS = [], SUMS = {}, FIGS = {}, BY_SECTION = new Map(), INDEX = null;
 
 /* ---------- chuẩn hoá tiếng Việt ---------- */
 const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
@@ -91,9 +91,37 @@ function search(q, limit = 5) {
 /* ---------- hiển thị ---------- */
 const esc = s => s.replace(/[&<>"]/g, m => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[m]));
 const officialUrl = c => `${OFFICIAL}&lv1=${c.lv1}&lv2=${c.lv2}` + (c.anchor ? `&lv3=${c.anchor}` : "");
-const crumb = c => esc([c.chapter, c.section, ...c.path].join(" › "));
+const crumb = c => esc([c.section, ...c.path.slice(0, 2)].filter((x, i, a) => a.indexOf(x) === i).join(" › "));
+const thumb = f => f.replace("img/", "img/t/");
 
-const sumHtml = u => SUMS[u] ? `<div class="sum">${esc(SUMS[u])}</div>` : "";
+// Tóm tắt (text thuần) -> HTML: câu mở đầu, danh sách, ô cảnh báo
+function fmtSum(t) {
+  const lines = t.split("\n").map(x => x.trim()).filter(Boolean);
+  let out = "", ul = [];
+  const flush = () => { if (ul.length) { out += `<ul>${ul.join("")}</ul>`; ul = []; } };
+  lines.forEach(l => {
+    if (l.startsWith("•")) ul.push(`<li>${esc(l.replace(/^•\s*/, ""))}</li>`);
+    else if (l.startsWith("⚠️")) { flush(); out += `<div class="warnbox"><span>⚠️</span><p>${esc(l.replace(/^⚠️\s*/, ""))}</p></div>`; }
+    else { flush(); out += `<p>${esc(l)}</p>`; }
+  });
+  flush();
+  return `<div class="sumtxt">${out}</div>`;
+}
+
+function figStrip(u) {
+  const f = FIGS[u];
+  if (!f || !f.length) return "";
+  return `<div class="figs${f.length > 1 ? " multi" : ""}">${f.slice(0, 8).map(x => `<img src="${x}" alt="Hình minh họa từ Hướng dẫn sử dụng" loading="lazy" data-zoom="${x}">`).join("")}</div>${f.length > 1 ? `<div class="figcount">${f.length} hình · vuốt ngang để xem</div>` : ""}`;
+}
+
+function unitCard(units, hitId) {
+  return units.map(u => {
+    const first = u.items[0];
+    const sub = first.path.length > 1 ? `<h4>${esc(first.path[1])}</h4>` : "";
+    const orig = u.items.map(c => `<div id="c${c.id}">${c.path.length > 2 ? `<p class="Sub-Section"><b>${esc(c.path.slice(2).join(" › "))}</b></p>` : ""}${c.html}</div>`).join("");
+    return `<section class="unit">${sub}${figStrip(u.u)}${SUMS[u.u] ? fmtSum(SUMS[u.u]) : ""}<details class="orig"${u.items.some(c => c.id === hitId) ? " open" : ""}><summary>Xem nguyên văn HDSD</summary><div class="md">${orig}</div></details></section>`;
+  }).join("");
+}
 
 function renderGroups(chunks, hitId) {
   const groups = [];
@@ -104,22 +132,17 @@ function renderGroups(chunks, hitId) {
     g.items.push(c);
   });
   const single = groups.length === 1;
-  return groups.map(g => {
+  return groups.map((g, gi) => {
     const hit = g.items.some(c => c.id === hitId);
-    // gom các chunk liên tiếp cùng một đơn vị tóm tắt
     const units = [];
     g.items.forEach(c => {
       let u = units[units.length - 1];
       if (!u || u.u !== c.u) { u = {u: c.u, items: []}; units.push(u); }
       u.items.push(c);
     });
-    const body = units.map(u => {
-      const sub = u.items[0].path.length > 1 ? `<p class="subt">${esc(u.items[0].path.slice(1, 2).join(""))}</p>` : "";
-      const orig = u.items.map(c => `<div id="c${c.id}">${c.path.length > 2 ? `<p class="Sub-Section"><b>${esc(c.path.slice(2).join(" › "))}</b></p>` : ""}${c.html}</div>`).join("");
-      return `<div class="unit">${sub}${sumHtml(u.u)}<details class="orig"${u.items.some(c => c.id === hitId) ? " open" : ""}><summary>Xem nguyên văn HDSD</summary><div class="md">${orig}</div></details></div>`;
-    }).join("");
-    const sub = g.title !== g.section ? ` <small style="color:var(--muted);font-weight:400">· ${esc(g.section)}</small>` : "";
-    return `<details class="grp${hit ? " hit" : ""}"${single || hit ? " open" : ""}><summary><span>${esc(g.title)}${sub}</span></summary><div class="body">${body}</div></details>`;
+    const nfig = new Set(units.flatMap(u => FIGS[u.u] || [])).size;
+    const sub = g.title !== g.section ? `<small>${esc(g.section)}</small>` : "";
+    return `<details class="grp${hit ? " hit" : ""}"${single || hit || (hitId == null && gi === 0) ? " open" : ""}><summary><span class="gt">${esc(g.title)}${sub}</span>${nfig ? `<span class="pill">🖼 ${nfig}</span>` : ""}</summary><div class="body">${unitCard(units, hitId)}</div></details>`;
   }).join("");
 }
 
@@ -131,36 +154,58 @@ function bindAsk() {
   };
 }
 
+function topicChunks(t) {
+  const out = [];
+  t.refs.forEach(r => (BY_SECTION.get(r.s) || []).forEach(c => { if (!r.h || r.h.includes(c.path[0])) out.push(c); }));
+  return out;
+}
+// mỗi chủ đề một ảnh đại diện riêng (không trùng file với chủ đề trước)
+let TOPIC_FIG = null;
+function buildTopicFigs() {
+  TOPIC_FIG = {};
+  const used = new Set();
+  TOPIC_GROUPS.forEach(g => g.topics.forEach(t => {
+    const cand = [];
+    topicChunks(t).forEach(c => (FIGS[c.u] || []).forEach(f => { if (!cand.includes(f)) cand.push(f); }));
+    const pick = cand.find(f => !used.has(f)) || null;
+    if (pick) used.add(pick);
+    TOPIC_FIG[t.id] = pick;
+  }));
+}
+const topicFig = t => { if (!TOPIC_FIG) buildTopicFigs(); return TOPIC_FIG[t.id]; };
+const findTopic = id => TOPIC_GROUPS.flatMap(g => g.topics).find(x => x.id === id);
+
 function homeView() {
-  const chips = ["Cách sạc xe", "Mở cốp sau", "Chế độ lái", "Đèn cảnh báo trên taplo", "Kết nối CarPlay", "Phanh tay điện tử", "Hết điện ắc quy 12V"];
+  const chips = ["Cách sạc xe", "Mở cốp sau", "Chế độ lái", "Đèn cảnh báo trên taplo", "Kết nối CarPlay", "Hết điện ắc quy 12V"];
+  const urgent = [["ac-quy", "⚡", "Hết điện 12V"], ["cuu-ho", "🆘", "Kéo xe / vá lốp"], ["lien-he", "☎️", "Gọi VinFast"], ["den-canh-bao", "🚨", "Đèn cảnh báo"]];
   app.innerHTML = `
-    <h1>Bạn cần biết gì về VF 8?</h1>
-    <form class="ask" id="askf" role="search">
-      <input id="q" type="search" placeholder="Gõ câu hỏi, ví dụ: cách sạc xe" autocomplete="off" aria-label="Câu hỏi" enterkeyhint="search">
-      <button type="submit">Hỏi</button>
-    </form>
-    <div class="chips">${chips.map(c => `<button class="chip" data-q="${esc(c)}">${esc(c)}</button>`).join("")}</div>
-    <p class="notice">Câu trả lời là <b>bản tóm tắt ngắn</b> của mục tương ứng trong Hướng dẫn sử dụng chính hãng; luôn có nút xem nguyên văn và link bản gốc để đối chiếu.</p>
-    ${TOPIC_GROUPS.map(g => `<h2>${esc(g.name)}</h2><div class="grid">${g.topics.map(t => `<a class="tile" href="#/topic/${t.id}"><span class="ic">${t.ic}</span><span class="tt">${esc(t.t)}</span></a>`).join("")}</div>`).join("")}`;
+    <section class="hero">
+      <p class="eyebrow">VinFast VF 8 All New</p>
+      <h1>Bạn cần biết gì về xe?</h1>
+      <form class="ask" id="askf" role="search">
+        <input id="q" type="search" placeholder="Hỏi nhanh: cách sạc xe, mở cốp sau…" autocomplete="off" aria-label="Câu hỏi" enterkeyhint="search">
+        <button type="submit" aria-label="Hỏi">Hỏi</button>
+      </form>
+      <div class="chips">${chips.map(c => `<button class="chip" data-q="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+    </section>
+    <section class="urgent"><h2>Cần gấp</h2><div class="urow">${urgent.map(([id, ic, t]) => `<a href="#/topic/${id}"><span>${ic}</span>${t}</a>`).join("")}</div></section>
+    ${TOPIC_GROUPS.map((g, gi) => `<section class="tg g${gi}"><h2><i></i>${esc(g.name)}</h2><div class="grid">${g.topics.map(t => {
+      const f = topicFig(t);
+      return `<a class="tile" href="#/topic/${t.id}"><div class="timg">${f ? `<img src="${thumb(f)}" alt="" loading="lazy">` : `<span class="big">${t.ic}</span>`}<span class="ic">${t.ic}</span></div><span class="tt">${esc(t.t)}</span></a>`;
+    }).join("")}</div></section>`).join("")}
+    <p class="note">Tóm tắt do Claude soạn sẵn từ Hướng dẫn sử dụng chính hãng; luôn có nút xem nguyên văn để đối chiếu.</p>`;
   bindAsk();
   app.querySelectorAll(".chip").forEach(b => b.onclick = () => { location.hash = "#/ask/" + encodeURIComponent(b.dataset.q); });
   window.scrollTo(0, 0);
 }
 
-function topicChunks(t) {
-  const out = [];
-  t.refs.forEach(r => (BY_SECTION.get(r.s) || []).forEach(c => {
-    if (!r.h || r.h.includes(c.path[0])) out.push(c);
-  }));
-  return out;
-}
-
 function topicView(id) {
-  const t = TOPIC_GROUPS.flatMap(g => g.topics).find(x => x.id === id);
+  const t = findTopic(id);
   if (!t) return homeView();
-  const chunks = topicChunks(t);
+  const gi = TOPIC_GROUPS.findIndex(g => g.topics.includes(t));
+  const chunks = topicChunks(t), f = topicFig(t);
   app.innerHTML = `<a class="back" href="#/">‹ Tất cả chức năng</a>
-    <h1>${t.ic} ${esc(t.t)}</h1>
+    <header class="thero g${gi}">${f ? `<img src="${f}" alt="" data-zoom="${f}">` : ""}<div class="tcap"><span class="ic">${t.ic}</span><h1>${esc(t.t)}</h1></div></header>
     ${chunks.length ? renderGroups(chunks) : `<p class="empty">Không tìm thấy nội dung. Hãy mở bản gốc.</p>`}
     <div class="actions"><a class="btn ghost" target="_blank" rel="noopener" href="${chunks[0] ? officialUrl(chunks[0]) : OFFICIAL}">Mở bản gốc của VinFast ↗</a></div>`;
   window.scrollTo(0, 0);
@@ -170,7 +215,7 @@ function sectionView(lv2, hitId) {
   const chunks = BY_SECTION.get(+lv2);
   if (!chunks) return homeView();
   app.innerHTML = `<a class="back" href="javascript:history.back()">‹ Quay lại</a>
-    <div class="crumb">${esc(chunks[0].chapter)}</div><h1>${esc(chunks[0].section)}</h1>
+    <div class="crumb">${esc(chunks[0].chapter)}</div><h1 class="sech">${esc(chunks[0].section)}</h1>
     ${renderGroups(chunks, hitId)}
     <div class="actions"><a class="btn ghost" target="_blank" rel="noopener" href="${officialUrl(chunks[0])}">Mở bản gốc của VinFast ↗</a></div>`;
   const el = hitId != null && $("#c" + hitId);
@@ -183,18 +228,19 @@ function askView(q) {
   const seen = new Set(), top = [];
   hits.forEach(h => { if (!seen.has(h.c.u) && top.length < 3) { seen.add(h.c.u); top.push(h); } });
   app.innerHTML = `<a class="back" href="#/">‹ Trang chủ</a>
-    <form class="ask" id="askf"><input id="q" type="search" value="${esc(q)}" aria-label="Câu hỏi" enterkeyhint="search"><button type="submit">Hỏi</button></form>
+    <form class="ask solo" id="askf"><input id="q" type="search" value="${esc(q)}" aria-label="Câu hỏi" enterkeyhint="search"><button type="submit">Hỏi</button></form>
     ${none ? `<p class="empty">Không tìm thấy mục nào trong Hướng dẫn sử dụng khớp với câu hỏi này.<br>Thử diễn đạt khác, hoặc chọn một chức năng ở <a href="#/">trang chủ</a>.</p>` : `
     ${weak ? `<p class="notice">Chưa chắc chắn: đây là các mục <b>gần nhất</b> trong Hướng dẫn sử dụng, hãy đọc kỹ xem có đúng ý không.</p>` : ""}
-    ${top.map((h, i) => `<article class="card${weak ? " low" : ""}">
-      ${i === 0 && !weak ? `<span class="badge">Khớp nhất</span>` : ""}
+    ${top.map((h, i) => `<article class="card ans${i === 0 && !weak ? " best" : ""}${weak ? " low" : ""}">
+      ${i === 0 && !weak ? `<span class="badge">Trả lời gợi ý</span>` : ""}
       <div class="crumb">${crumb(h.c)}</div>
-      ${SUMS[h.c.u] ? `<div class="sum big">${esc(SUMS[h.c.u])}</div>` : `<div class="md${h.c.text.length > 900 ? " clamp" : ""}">${h.c.html}</div>`}
+      ${figStrip(h.c.u)}
+      ${SUMS[h.c.u] ? fmtSum(SUMS[h.c.u]) : `<div class="md">${h.c.html}</div>`}
       <div class="actions">
         <button class="btn ghost" data-open="${h.c.id}">Xem nguyên văn HDSD</button>
         <a class="btn ghost" target="_blank" rel="noopener" href="${officialUrl(h.c)}">Bản gốc ↗</a>
       </div></article>`).join("")}
-    <p class="foot-note">Tóm tắt do Claude soạn sẵn từ HDSD; luôn có nút xem nguyên văn để đối chiếu.</p>`}`;
+    <p class="note">Tóm tắt do Claude soạn sẵn từ HDSD; luôn có nút xem nguyên văn để đối chiếu.</p>`}`;
   bindAsk();
   app.querySelectorAll("[data-open]").forEach(b => b.onclick = () => { const c = CHUNKS[+b.dataset.open]; location.hash = `#/section/${c.lv2}/${c.id}`; });
   window.scrollTo(0, 0);
@@ -209,12 +255,25 @@ function route() {
   else homeView();
 }
 
+/* phóng to ảnh */
+document.addEventListener("click", e => {
+  const z = e.target.closest("[data-zoom]") || e.target.closest(".md p.Image img");
+  if (z) {
+    const lb = document.createElement("div");
+    lb.className = "lightbox";
+    lb.innerHTML = `<img src="${z.dataset.zoom || z.getAttribute("src")}" alt=""><span>Chạm để đóng</span>`;
+    lb.onclick = () => lb.remove();
+    document.body.appendChild(lb);
+  }
+});
+
 /* ---------- khởi động ---------- */
 async function init() {
   statusEl.hidden = false;
   try {
     CHUNKS = await (await fetch("data/manual.json")).json();
     SUMS = await (await fetch("data/summaries.json")).json().catch(() => ({}));
+    FIGS = await (await fetch("data/figs.json")).json().catch(() => ({}));
   } catch (e) {
     app.innerHTML = `<p class="empty">Không tải được dữ liệu hướng dẫn. Kiểm tra kết nối rồi tải lại trang.</p>`;
     return;

@@ -1,6 +1,6 @@
 // Cache app shell + dữ liệu hướng dẫn để dùng offline; ảnh HDSD cache dần khi đã xem.
-const V = "vf8-v2";
-const SHELL = ["./", "index.html", "style.css", "app.js", "topics.js", "data/manual.json", "data/summaries.json", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
+const V = "vf8-v3";
+const SHELL = ["./", "index.html", "style.css", "app.js", "topics.js", "data/manual.json", "data/summaries.json", "data/figs.json", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });

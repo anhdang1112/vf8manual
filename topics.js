@@ -9,7 +9,7 @@ window.TOPIC_GROUPS = [
     {id: "phanh-tai-sinh", ic: "♻️", t: "Phanh tái sinh", refs: [{s: 1332227, h: ["Phanh tái sinh"]}]},
     {id: "vo-lang", ic: "🎛️", t: "Vô lăng & công tắc", refs: [{s: 1332222}]},
     {id: "ghe", ic: "💺", t: "Chỉnh ghế", refs: [{s: 1332210}]},
-    {id: "guong", ic: "🪞", t: "Gương", refs: [{s: 1332223}]},
+    {id: "guong", ic: "👀", t: "Gương", refs: [{s: 1332223}]},
     {id: "den", ic: "💡", t: "Đèn, xi-nhan, đèn khẩn cấp", refs: [{s: 1332224}]},
     {id: "gat-mua", ic: "🌧️", t: "Gạt mưa & rửa kính", refs: [{s: 1332226}]}
   ]},
@@ -19,7 +19,7 @@ window.TOPIC_GROUPS = [
     {id: "tiet-kiem", ic: "🍃", t: "Lái xe tiết kiệm năng lượng", refs: [{s: 1332228, h: ["Lái xe tiết kiệm năng lượng"]}]}
   ]},
   {name: "An toàn & hỗ trợ lái (ADAS)", topics: [
-    {id: "day-dai", ic: "🪢", t: "Dây an toàn", refs: [{s: 1332211}]},
+    {id: "day-dai", ic: "🔒", t: "Dây an toàn", refs: [{s: 1332211}]},
     {id: "ghe-tre-em", ic: "🧒", t: "Ghế an toàn cho trẻ em", refs: [{s: 1332212}]},
     {id: "tui-khi", ic: "🛡️", t: "Túi khí", refs: [{s: 1332213}]},
     {id: "acc", ic: "🚗", t: "ACC – kiểm soát hành trình thích ứng", refs: [{s: 1332214, h: ["ACC- Kiểm soát hành trình thích ứng"]}]},
@@ -37,8 +37,8 @@ window.TOPIC_GROUPS = [
     {id: "app", ic: "📲", t: "Ứng dụng VinFast", refs: [{s: 1332236}]}
   ]},
   {name: "Sự cố & hỗ trợ", topics: [
-    {id: "ap-suat-lop", ic: "🛞", t: "Áp suất lốp", refs: [{s: 1332245, h: ["Áp suất lốp", "Hệ thống giám sát áp suất lốp"]}]},
-    {id: "ac-quy", ic: "🪫", t: "Ắc quy 12V & khởi động bằng nguồn hỗ trợ", refs: [{s: 1332244, h: ["Ắc quy (12V)"]}, {s: 1332253, h: ["Khởi động bằng nguồn hỗ trợ"]}]},
+    {id: "ap-suat-lop", ic: "⭕", t: "Áp suất lốp", refs: [{s: 1332245, h: ["Áp suất lốp", "Hệ thống giám sát áp suất lốp"]}]},
+    {id: "ac-quy", ic: "⚡", t: "Ắc quy 12V & khởi động bằng nguồn hỗ trợ", refs: [{s: 1332244, h: ["Ắc quy (12V)"]}, {s: 1332253, h: ["Khởi động bằng nguồn hỗ trợ"]}]},
     {id: "cuu-ho", ic: "🆘", t: "Kích xe, vá lốp, kéo xe", refs: [{s: 1332253, h: ["Kích xe và Sửa chữa lốp", "Kéo xe (EV)"]}]},
     {id: "ngap-nuoc", ic: "🌊", t: "Đi qua vùng ngập nước", refs: [{s: 1332230}]},
     {id: "lien-he", ic: "☎️", t: "Liên hệ VinFast & gọi khẩn cấp", refs: [{s: 1332254}, {s: 1332252, h: ["Cuộc gọi khẩn cấp (eCall) (nếu được trang bị)"]}]},

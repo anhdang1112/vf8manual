@@ -5,7 +5,7 @@ Dữ liệu lấy từ HDSD chính hãng (API công khai `omapi.vinfastauto.com`
 
 - Hỏi đáp = tìm mục khớp nhất trong HDSD (BM25, bỏ dấu tiếng Việt) rồi hiện tóm tắt sẵn + nguyên văn + link bản gốc. Không gọi AI lúc chạy nên không cần API key và không bịa theo câu hỏi.
 - Chạy thử: `python -m http.server 8765` rồi mở http://localhost:8765 (PWA cần HTTPS hoặc localhost).
-- Cập nhật khi VinFast sửa HDSD: `python tools/build_data.py` -> `python tools/make_units.py` -> nhờ Claude tóm tắt lại các batch trong `tools/work/` (ghi `sum_N.json`) -> `python tools/merge_summaries.py`
+- Cập nhật khi VinFast sửa HDSD: `python tools/build_data.py` -> `python tools/make_units.py` -> nhờ Claude tóm tắt lại các batch trong `tools/work/` (ghi `sum_N.json`) -> `python tools/merge_summaries.py` -> `python tools/build_images.py` (tải và nén sơ đồ minh họa vào `img/`)
 - Sửa danh mục chức năng: `topics.js` (chỉ trỏ tới mục có sẵn trong HDSD).
 - Ảnh trong HDSD tải trực tiếp từ server VinFast (cần mạng lần đầu, sau đó được cache).
 - Lưu ý bản quyền: nội dung HDSD thuộc VinFast, chỉ nên dùng cá nhân/nội bộ, cân nhắc trước khi public.
