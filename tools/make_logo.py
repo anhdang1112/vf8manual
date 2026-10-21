@@ -1,6 +1,7 @@
 """Tạo logo/icon app.
-  python tools/make_logo.py            -> logo VECTOR (SUV trắng nóc đen), nét ở mọi kích thước (mặc định)
-  python tools/make_logo.py --photo    -> dùng ảnh xe thật tools/assets/car.png (ảnh nhỏ nên hơi mềm)
+  python tools/make_logo.py            -> dùng ảnh VF 8 tools/assets/car-photo.png (1024x768), xóa watermark góc dưới (mặc định)
+  python tools/make_logo.py --vector   -> logo vector tự vẽ (SUV trắng nóc đen)
+  python tools/make_logo.py --photo    -> ảnh xe cũ tools/assets/car.png (120x100, mềm)
 Ra: icons/logo.svg, icons/icon-192.png, icons/icon-512.png, icons/logo.png, img/interior.jpg"""
 import sys
 from pathlib import Path
@@ -74,11 +75,37 @@ def photo_png(size):
     sq = Image.fromarray(np.pad(a, ((py, side - h - py), (px, side - w - px), (0, 0)), mode="edge"))
     return sq.resize((size, size), Image.LANCZOS).filter(ImageFilter.UnsharpMask(radius=size / 160, percent=70, threshold=2))
 
-make = photo_png if "--photo" in sys.argv else vector_png
+def vf8_png(size):
+    im = Image.open(ROOT / "tools/assets/car-photo.png").convert("RGB")
+    a = np.array(im).astype("float32")
+    # xóa watermark ở góc dưới (vùng nền sàn): nội suy dọc giữa hàng sạch phía trên và phía dưới, mép mờ dần
+    x0, x1, y0, y1 = 500, 780, 720, 758
+    top, bot = a[y0 - 2, x0:x1], a[y1 + 2, x0:x1]
+    for y in range(y0, y1):
+        t = (y - y0) / (y1 - y0)
+        fill = top * (1 - t) + bot * t
+        w = np.ones(x1 - x0)[:, None]
+        ramp = np.minimum(1, np.minimum(np.arange(x1 - x0), np.arange(x1 - x0)[::-1]) / 14.0)[:, None]
+        a[y, x0:x1] = a[y, x0:x1] * (1 - ramp) + fill * ramp
+    im = Image.fromarray(np.clip(a, 0, 255).astype("uint8")).crop((70, 0, 930, 768))   # 860x768, chừa lề trái/phải
+    # nới thêm lề trên/dưới cho vuông: lặp mép rồi làm mờ để liền với nền studio
+    pad = (860 - 768) // 2
+    arr = np.pad(np.array(im), ((pad, 860 - 768 - pad), (0, 0), (0, 0)), mode="edge")
+    full = Image.fromarray(arr)
+    blur = full.filter(ImageFilter.GaussianBlur(16))
+    ramp = np.zeros(860, dtype="float32")
+    for y in range(860):
+        d = min(y, 859 - y)
+        ramp[y] = 1.0 if d < pad - 6 else max(0.0, 1 - (d - (pad - 6)) / 26.0)
+    m = Image.fromarray((np.repeat(ramp[:, None], 860, axis=1) * 255).astype("uint8"))
+    im = Image.composite(blur, full, m)
+    return im.resize((size, size), Image.LANCZOS).filter(ImageFilter.UnsharpMask(radius=size / 220, percent=40, threshold=3))
+
+make = photo_png if "--photo" in sys.argv else vector_png if "--vector" in sys.argv else vf8_png
 for s in (192, 512):
     make(s).save(ROOT / f"icons/icon-{s}.png")
-make(96).save(ROOT / "icons/logo.png")
+make(128).save(ROOT / "icons/logo.png")
 (ROOT / "icons/logo.svg").write_text(svg(), encoding="utf8")
 (ROOT / "img").mkdir(exist_ok=True)
 Image.open(ROOT / "tools/assets/interior.png").convert("RGB").save(ROOT / "img/interior.jpg", quality=80, optimize=True)
-print("ok", "photo" if "--photo" in sys.argv else "vector")
+print("ok", "photo" if "--photo" in sys.argv else "vector" if "--vector" in sys.argv else "vf8")
