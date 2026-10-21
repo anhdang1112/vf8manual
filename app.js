@@ -334,7 +334,7 @@ async function init() {
   route();
 }
 init();
-const APP_VERSION = "v6 · 21/10/2026";
+const APP_VERSION = "v7 · 21/10/2026";
 $(".foot").insertAdjacentHTML("beforeend", `<span class="ver">Phiên bản app: ${APP_VERSION}</span>`);
 if ("serviceWorker" in navigator) {
   const had = !!navigator.serviceWorker.controller;
