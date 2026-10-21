@@ -336,7 +336,7 @@ async function init() {
   offlineHint();
 }
 init();
-const APP_VERSION = "v9 · 21/10/2026";
+const APP_VERSION = "v10 · 21/10/2026";
 $(".foot").insertAdjacentHTML("beforeend", `<span class="ver">Phiên bản app: ${APP_VERSION}</span>`);
 if ("serviceWorker" in navigator) {
   const had = !!navigator.serviceWorker.controller;
