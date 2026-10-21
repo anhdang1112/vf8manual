@@ -131,3 +131,31 @@ details.orig>summary{cursor:pointer;color:var(--brand);font-size:13.5px;font-wei
 .lightbox span{color:#cbd5e1;font-size:13px;margin-top:10px}
 .sumtxt ul.bl>li.so{padding-left:0}
 .sumtxt ul.bl>li.so::before{display:none}
+/* ===== Khung cảnh báo / lưu ý / thận trọng: giữ màu như HDSD gốc ===== */
+:root{--w-bg:#fff1f1;--w-bd:#d2262a;--n-bg:#f1f6ff;--n-bd:#0078bf;--c-bg:#fffbe6;--c-bd:#d6a100;--ft:#0a4fd6}
+@media (prefers-color-scheme:dark){:root{--w-bg:#3b1c1e;--w-bd:#ff6b6e;--n-bg:#14263f;--n-bd:#5aaeea;--c-bg:#38321a;--c-bd:#e6b800;--ft:#8ab4ff}}
+.md section.warning-part,.md section.caution-part{background:none;border:0;padding:0;margin:0}
+.md p.Warning,.md section.warning-part p.Warning{background:var(--w-bg);border:1px solid var(--w-bd);border-left:6px solid var(--w-bd);padding:10px 12px;border-radius:10px;margin:12px 0;font-size:15px}
+.md p.Note,.md section.warning-part p.Note{background:var(--n-bg);border:1px solid var(--n-bd);border-left:6px solid var(--n-bd);padding:10px 12px;border-radius:10px;margin:12px 0;font-size:15px}
+.md p.Caution,.md section.caution-part p.Caution{background:var(--c-bg);border:1px solid var(--c-bd);border-left:6px solid var(--c-bd);padding:10px 12px;border-radius:10px;margin:12px 0;font-size:15px}
+.md .WARNING-HEADING{color:var(--w-bd);font-weight:800;letter-spacing:.3px}
+.md .NOTE-HEADING{color:var(--n-bd);font-weight:800;letter-spacing:.3px}
+.md .CAUTION-HEADING{font-weight:800}
+.md .WARNING-HEADING img,.md .CAUTION-HEADING img{width:22px;height:22px;vertical-align:-5px;margin-right:4px}
+.md p.Warning,.md p.Note,.md p.Caution{font-weight:600}
+.md .boxes{margin:8px 0}
+/* ===== Hướng dẫn thao tác: trình bày như bản gốc ===== */
+.md .Feature-Bold,.sumtxt .ft{font-weight:800;color:var(--ft)}
+.md p.Sub-Section{font-size:17px;font-weight:700;color:var(--brand);margin:16px 0 6px}
+.md p.Sub-Sub-Heading{font-size:15.5px;font-weight:700;margin:14px 0 4px}
+.md p.Detail{margin:.55em 0}
+.md ol.List{padding-left:1.5em;margin:.5em 0}
+.md ol.List>li{padding-left:.3em;margin:.55em 0}
+.md ol.List>li::marker{color:var(--brand);font-weight:800}
+.md ul.Points{padding-left:1.3em;margin:.5em 0}
+.md ul.Points>li{margin:.5em 0}
+.md ul.Points>li::marker{color:var(--brand)}
+.procmd{font-size:15.5px;line-height:1.65}
+.md p.Warning br+br,.md p.Note br+br,.md p.Caution br+br{display:none}
+.md p.Warning br,.md p.Note br,.md p.Caution br{content:"";display:block;margin-top:8px}
+.md .CAUTION-HEADING{color:var(--ink)}

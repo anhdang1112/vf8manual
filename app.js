@@ -96,33 +96,37 @@ const thumb = f => f.replace("img/", "img/t/");
 
 // Tóm tắt (text thuần) -> HTML: câu mở đầu, danh sách, ô cảnh báo
 // Tách "Nhãn: nội dung" (nhãn ngắn) để nhãn thành tiêu đề riêng một dòng
+let EM = null; // regex các thuật ngữ in đậm của mục đang hiển thị
+const emph = x => { const h = esc(x); return EM ? h.replace(EM, '<b class="ft">$1</b>') : h; };
 const cap = x => x.charAt(0).toUpperCase() + x.slice(1);
 const splitLabel = t => { const m = t.match(/^([^:.;()]{1,48}):\s+([\s\S]*)$/); return m ? [m[1], m[2]] : [null, t]; };
 
 function fmtBullet(t) {
   const [lab, rest] = splitLabel(t);
-  const head = lab ? `<b class="lb">${esc(lab)}</b>` : "";
+  const head = lab ? `<b class="lb">${emph(lab)}</b>` : "";
   const steps = rest.split(/\s*(?=\b\d{1,2}\)\s)/).filter(Boolean);
   if (steps.length >= 2 && /^1\)/.test(steps[0])) { // các bước 1) 2) 3) -> danh sách đánh số
-    return `<li${lab ? "" : ' class="so"'}>${head}<ol class="steps">${steps.map(s => `<li>${esc(cap(s.replace(/^\d{1,2}\)\s*/, "").replace(/[;,]\s*$/, "")))}</li>`).join("")}</ol></li>`;
+    return `<li${lab ? "" : ' class="so"'}>${head}<ol class="steps">${steps.map(s => `<li>${emph(cap(s.replace(/^\d{1,2}\)\s*/, "").replace(/[;,]\s*$/, "")))}</li>`).join("")}</ol></li>`;
   }
   const segs = rest.split(/;\s+/).filter(Boolean);
   if (segs.length >= 2 && rest.length > 80) { // nhiều ý ngăn bằng ";" -> mỗi ý một dòng
-    return `<li${lab ? "" : ' class="so"'}>${head}<ul class="sub">${segs.map(s => { const [l2, r2] = splitLabel(s); return `<li>${l2 ? `<b>${esc(l2)}:</b> ` : ""}${esc(cap(r2.replace(/[.;]\s*$/, "")))}</li>`; }).join("")}</ul></li>`;
+    return `<li${lab ? "" : ' class="so"'}>${head}<ul class="sub">${segs.map(s => { const [l2, r2] = splitLabel(s); return `<li>${l2 ? `<b>${esc(l2)}:</b> ` : ""}${emph(cap(r2.replace(/[.;]\s*$/, "")))}</li>`; }).join("")}</ul></li>`;
   }
-  return `<li>${head}<span class="tx">${esc(rest)}</span></li>`;
+  return `<li>${head}<span class="tx">${emph(rest)}</span></li>`;
 }
 
-function fmtSum(t) {
+function fmtSum(t, info) {
+  EM = info && info.terms.length ? new RegExp("(" + info.terms.map(x => esc(x).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")", "g") : null;
   const lines = t.split("\n").map(x => x.trim()).filter(Boolean);
   let out = "", ul = [];
   const flush = () => { if (ul.length) { out += `<ul class="bl">${ul.join("")}</ul>`; ul = []; } };
   lines.forEach(l => {
     if (l.startsWith("•")) ul.push(fmtBullet(l.replace(/^•\s*/, "")));
-    else if (l.startsWith("⚠️")) { flush(); out += `<div class="warnbox"><span>⚠️</span><p>${esc(l.replace(/^⚠️\s*/, ""))}</p></div>`; }
-    else { flush(); out += `<p>${esc(l)}</p>`; }
+    else if (l.startsWith("⚠️")) { if (info && info.boxes.length) return;  flush(); out += `<div class="warnbox"><span>⚠️</span><p>${esc(l.replace(/^⚠️\s*/, ""))}</p></div>`; }
+    else { flush(); out += `<p>${emph(l)}</p>`; }
   });
   flush();
+  EM = null;
   return `<div class="sumtxt">${out}</div>`;
 }
 
@@ -132,12 +136,35 @@ function figStrip(u) {
   return `<div class="figs${f.length > 1 ? " multi" : ""}">${f.slice(0, 8).map(x => `<img src="${x}" alt="Hình minh họa từ Hướng dẫn sử dụng" loading="lazy" data-zoom="${x}">`).join("")}</div>${f.length > 1 ? `<div class="figcount">${f.length} hình · vuốt ngang để xem</div>` : ""}`;
 }
 
+const UNIT_CHUNKS = new Map(), UINFO = new Map();
+function unitInfo(uid, cs) {
+  if (UINFO.has(uid)) return UINFO.get(uid);
+  const t = document.createElement("template");
+  t.innerHTML = cs.map(c => c.html).join("");
+  const info = {
+    proc: !!t.content.querySelector("ol"),
+    terms: [...new Set([...t.content.querySelectorAll("span.Feature-Bold")].map(e => e.textContent.replace(/\s+/g, " ").trim()).filter(x => x.length >= 3 && x.length <= 40))].sort((a, b) => b.length - a.length),
+    boxes: [...t.content.querySelectorAll("p.Warning,p.Note,p.Caution")].map(e => e.outerHTML)
+  };
+  UINFO.set(uid, info);
+  return info;
+}
+const origOf = cs => cs.map(c => `<div id="c${c.id}">${c.path.length > 2 ? `<p class="Sub-Section"><b>${esc(c.path.slice(2).join(" › "))}</b></p>` : ""}${c.html}</div>`).join("");
+
+// Thân một mục: có các bước thao tác -> hiện đầy đủ như HDSD; còn lại -> tóm tắt + khung cảnh báo/lưu ý nguyên văn
+function unitBody(uid, cs, hitId) {
+  const info = unitInfo(uid, cs), orig = origOf(cs);
+  if (info.proc) return `<div class="md procmd">${orig}</div>`;
+  return figStrip(uid) + (SUMS[uid] ? fmtSum(SUMS[uid], info) : "")
+    + (info.boxes.length ? `<div class="md boxes">${info.boxes.join("")}</div>` : "")
+    + `<details class="orig"${cs.some(c => c.id === hitId) ? " open" : ""}><summary>Xem nguyên văn HDSD</summary><div class="md">${orig}</div></details>`;
+}
+
 function unitCard(units, hitId) {
   return units.map(u => {
     const first = u.items[0];
     const sub = first.path.length > 1 ? `<h4>${esc(first.path[1])}</h4>` : "";
-    const orig = u.items.map(c => `<div id="c${c.id}">${c.path.length > 2 ? `<p class="Sub-Section"><b>${esc(c.path.slice(2).join(" › "))}</b></p>` : ""}${c.html}</div>`).join("");
-    return `<section class="unit">${sub}${figStrip(u.u)}${SUMS[u.u] ? fmtSum(SUMS[u.u]) : ""}<details class="orig"${u.items.some(c => c.id === hitId) ? " open" : ""}><summary>Xem nguyên văn HDSD</summary><div class="md">${orig}</div></details></section>`;
+    return `<section class="unit">${sub}${unitBody(u.u, u.items, hitId)}</section>`;
   }).join("");
 }
 
@@ -252,10 +279,9 @@ function askView(q) {
     ${top.map((h, i) => `<article class="card ans${i === 0 && !weak ? " best" : ""}${weak ? " low" : ""}">
       ${i === 0 && !weak ? `<span class="badge">Trả lời gợi ý</span>` : ""}
       <div class="crumb">${crumb(h.c)}</div>
-      ${figStrip(h.c.u)}
-      ${SUMS[h.c.u] ? fmtSum(SUMS[h.c.u]) : `<div class="md">${h.c.html}</div>`}
+      ${unitBody(h.c.u, UNIT_CHUNKS.get(h.c.u), null)}
       <div class="actions">
-        <button class="btn ghost" data-open="${h.c.id}">Xem nguyên văn HDSD</button>
+        <button class="btn ghost" data-open="${h.c.id}">Xem cả mục trong HDSD</button>
         <a class="btn ghost" target="_blank" rel="noopener" href="${officialUrl(h.c)}">Bản gốc ↗</a>
       </div></article>`).join("")}
     <p class="note">Tóm tắt do Claude soạn sẵn từ HDSD; luôn có nút xem nguyên văn để đối chiếu.</p>`}`;
@@ -296,6 +322,7 @@ async function init() {
     app.innerHTML = `<p class="empty">Không tải được dữ liệu hướng dẫn. Kiểm tra kết nối rồi tải lại trang.</p>`;
     return;
   }
+  CHUNKS.forEach(c => { if (!UNIT_CHUNKS.has(c.u)) UNIT_CHUNKS.set(c.u, []); UNIT_CHUNKS.get(c.u).push(c); });
   CHUNKS.forEach(c => { if (!BY_SECTION.has(c.lv2)) BY_SECTION.set(c.lv2, []); BY_SECTION.get(c.lv2).push(c); });
   buildIndex();
   statusEl.hidden = true;
@@ -303,7 +330,7 @@ async function init() {
   route();
 }
 init();
-const APP_VERSION = "v4 · 21/10/2026";
+const APP_VERSION = "v5 · 21/10/2026";
 $(".foot").insertAdjacentHTML("beforeend", `<span class="ver">Phiên bản app: ${APP_VERSION}</span>`);
 if ("serviceWorker" in navigator) {
   const had = !!navigator.serviceWorker.controller;
