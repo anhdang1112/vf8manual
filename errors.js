@@ -37,6 +37,7 @@ function errCard(e, open) {
     <summary>
       <div class="erow"><span class="spill st-${k}">${si.ic} ${esc(si.short)}</span>${e.n ? `<span class="epl">👥 ${e.n} người gặp</span>` : ""}${notBug(e) ? `<span class="enb">Có thể không phải lỗi</span>` : ""}</div>
       <div class="etitle">${esc(e.desc)}</div>
+      ${(() => { const pv = (e.tmp || e.fix || "").split(/[.;\n]/)[0].trim(); return pv ? `<div class="eprev">${e.tmp ? "🩹" : "🔧"} ${esc(pv.length > 100 ? pv.slice(0, 98) + "…" : pv)}</div>` : ""; })()}
       <div class="egrp">${esc(e.group)}</div>
     </summary>
     <div class="ebody">${blocks.join("")}${meta.length ? `<p class="emeta">${meta.join(" · ")}</p>` : ""}</div>

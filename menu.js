@@ -41,17 +41,19 @@ function openMenu() {
   m.innerHTML = `<div class="mback"></div><aside class="mpanel" role="dialog" aria-label="Menu">
     <div class="mtop"><b>Menu</b><button class="mclose" aria-label="Đóng menu">✕</button></div>
     <a class="mitem" href="#/">🏠 Trang chủ</a>
+    <a class="mitem" href="#/start">🚀 Mới lái xe? Bắt đầu từ đây</a>
     <a class="mitem hot" href="#/errors">🛠️ Lỗi thường gặp <small>${ERRS.length || ""}</small></a>
     ${TOPIC_GROUPS.map((g, gi) => `<details class="mgrp g${gi}"><summary>${GROUP_META[gi].ic} ${esc(g.name)} <small>${g.topics.length}</small></summary>
       ${g.topics.map(t => `<a class="mlink" href="#/topic/${t.id}">${t.ic} ${esc(t.t)}</a>`).join("")}</details>`).join("")}
+    <div class="mtheme"><span>Giao diện</span><div class="seg" role="group" aria-label="Giao diện">${[["auto", "Tự động"], ["light", "Sáng"], ["dark", "Tối"]].map(([v, l]) => `<button type="button" data-th="${v}" class="${Store.get("theme", "auto") === v ? "on" : ""}">${l}</button>`).join("")}</div></div>
     <a class="mitem ext" target="_blank" rel="noopener" href="${OFFICIAL}">📖 Hướng dẫn gốc của VinFast ↗</a>
   </aside>`;
   document.body.appendChild(m);
   document.body.classList.add("nosc");
+  m.querySelectorAll("[data-th]").forEach(b => b.onclick = () => { Store.set("theme", b.dataset.th); applyTheme(b.dataset.th); m.querySelectorAll("[data-th]").forEach(x => x.classList.toggle("on", x === b)); });
   m.querySelector(".mback").onclick = closeMenu;
   m.querySelector(".mclose").onclick = closeMenu;
   m.querySelectorAll("a").forEach(a => a.addEventListener("click", () => { if (!a.target) closeMenu(); }));
 }
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenu(); });
-document.addEventListener("click", e => { if (e.target.closest("#menubtn")) openMenu(); });
 window.addEventListener("hashchange", closeMenu);

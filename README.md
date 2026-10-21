@@ -14,3 +14,9 @@ Dữ liệu lấy từ HDSD chính hãng (API công khai `omapi.vinfastauto.com`
 - Nguồn: Google Sheet tab 'Danh sách lỗi' (chia sẻ bằng link). Cập nhật: `python tools/build_errors.py` -> `data/errors.json`.
 - Bỏ cột 'Người báo' và 'Ghi chú', thay tên người trong các cột còn lại bằng 'một chủ xe' (xem `clean()` trong script). Trước khi publish, kiểm tra lại `data/errors.json` không còn tên/thông tin cá nhân.
 - Trong app luôn gắn nhãn 'thông tin cộng đồng, không phải chính hãng VinFast'.
+
+## Cấu trúc giao diện
+- `app.js`: dữ liệu, tìm kiếm (BM25), các màn hình chính. `menu.js`: thẻ nhóm, trang nhóm, menu. `nav.js`: thanh điều hướng đáy, trang Hỏi (gợi ý + giọng nói), Mới lái xe, Gần đây/Yêu thích, theme, lightbox. `errors.js`: Lỗi thường gặp.
+- Dữ liệu người dùng (yêu thích, đã xem, lịch sử hỏi, theme) chỉ lưu trên máy (localStorage), không gửi đi đâu.
+- Logo/icon: thay `tools/assets/car.png` rồi chạy `python tools/make_logo.py`. Ảnh nền hero: `tools/assets/interior.png`.
+- Dấu vân tay ảnh để chọn ảnh đại diện khác nhau: `data/fighash.json` (dHash 64 bit từ `img/t/*.webp`).
